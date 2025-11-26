@@ -1,11 +1,11 @@
 # raj_dataset.py
 import os
+
+import pandas as pd
 from PIL import Image
 from torch.utils.data import Dataset
-import torch
 from torchvision import transforms
-import pandas as pd
-from collections import defaultdict
+
 
 class RajDataset(Dataset):
     """
@@ -15,12 +15,14 @@ class RajDataset(Dataset):
     Returns: (image_tensor, label_index, image_path)
     """
 
-    def __init__(self,
-                 root_dir=None,
-                 annotations_file=None,
-                 transform=None,
-                 img_size=224,
-                 ensure_exists=True):
+    def __init__(
+        self,
+        root_dir=None,
+        annotations_file=None,
+        transform=None,
+        img_size=224,
+        ensure_exists=True,
+    ):
         """
         Args:
             root_dir (str): root folder with subfolders per class (optional if using CSV)
@@ -29,12 +31,15 @@ class RajDataset(Dataset):
             img_size (int): image resizing size (ViT expects 224 usually)
         """
         self.img_size = img_size
-        self.transform = transform or transforms.Compose([
-            transforms.Resize((img_size, img_size)),
-            transforms.ToTensor(),
-            transforms.Normalize(mean=[0.485, 0.456, 0.406],
-                                 std=[0.229, 0.224, 0.225])
-        ])
+        self.transform = transform or transforms.Compose(
+            [
+                transforms.Resize((img_size, img_size)),
+                transforms.ToTensor(),
+                transforms.Normalize(
+                    mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]
+                ),
+            ]
+        )
 
         self.samples = []  # list of tuples (image_path, label_str)
         self.class_to_idx = {}
@@ -42,19 +47,27 @@ class RajDataset(Dataset):
 
         if annotations_file:
             df = pd.read_csv(annotations_file)
-            if 'image_path' not in df.columns or 'label' not in df.columns:
+            if "image_path" not in df.columns or "label" not in df.columns:
                 raise ValueError("CSV must contain 'image_path' and 'label' columns.")
             for _, row in df.iterrows():
-                imgp = str(row['image_path'])
-                lbl = str(row['label'])
+                imgp = str(row["image_path"])
+                lbl = str(row["label"])
                 self.samples.append((imgp, lbl))
         elif root_dir:
             # Walk folder structure
-            classes = sorted([d for d in os.listdir(root_dir) if os.path.isdir(os.path.join(root_dir, d))])
+            classes = sorted(
+                [
+                    d
+                    for d in os.listdir(root_dir)
+                    if os.path.isdir(os.path.join(root_dir, d))
+                ]
+            )
             for c in classes:
                 cpath = os.path.join(root_dir, c)
                 for fname in os.listdir(cpath):
-                    if fname.lower().endswith(('.png', '.jpg', '.jpeg', '.tiff', '.bmp')):
+                    if fname.lower().endswith(
+                        (".png", ".jpg", ".jpeg", ".tiff", ".bmp")
+                    ):
                         self.samples.append((os.path.join(cpath, fname), c))
         else:
             raise ValueError("Either annotations_file or root_dir must be provided.")
@@ -67,7 +80,9 @@ class RajDataset(Dataset):
         if ensure_exists:
             missing = [p for p, _ in self.samples if not os.path.exists(p)]
             if missing:
-                raise FileNotFoundError(f"Found {len(missing)} missing images. Example: {missing[:3]}")
+                raise FileNotFoundError(
+                    f"Found {len(missing)} missing images. Example: {missing[:3]}"
+                )
 
     def __len__(self):
         return len(self.samples)
@@ -84,6 +99,7 @@ class RajDataset(Dataset):
 
     def class_names(self):
         return [self.idx_to_class[i] for i in range(self.num_classes())]
+
 
 if __name__ == "__main__":
     # quick sanity check usage

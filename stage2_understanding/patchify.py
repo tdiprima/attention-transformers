@@ -19,7 +19,9 @@ def patchify(img, patch_size=16):
     returns patches: [num_patches, patch_dim]
     """
     c, h, w = img.shape
-    assert h % patch_size == 0 and w % patch_size == 0, "Image must be divisible by patch_size."
+    assert (
+        h % patch_size == 0 and w % patch_size == 0
+    ), "Image must be divisible by patch_size."
 
     patches = img.unfold(1, patch_size, patch_size).unfold(2, patch_size, patch_size)
     # shape: [3, h/ps, w/ps, ps, ps]
@@ -39,10 +41,7 @@ if __name__ == "__main__":
     image_path = sys.argv[1]
 
     img = Image.open(image_path).convert("RGB")
-    transform = T.Compose([
-        T.Resize((224, 224)),
-        T.ToTensor()
-    ])
+    transform = T.Compose([T.Resize((224, 224)), T.ToTensor()])
 
     img_tensor = transform(img)
     patches = patchify(img_tensor, patch_size=16)

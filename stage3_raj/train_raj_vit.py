@@ -2,14 +2,17 @@
 import argparse
 import os
 import time
+
+import numpy as np
 import torch
 import torch.nn as nn
 import torch.optim as optim
 from torch.utils.data import DataLoader, random_split
 from torchvision import models
-from raj_dataset import RajDataset
 from tqdm import tqdm
-import numpy as np
+
+from raj_dataset import RajDataset
+
 
 def get_vit_model(num_classes, device, pretrained=True):
     """
@@ -17,7 +20,9 @@ def get_vit_model(num_classes, device, pretrained=True):
     """
     try:
         # torchvision >= 0.13 style
-        model = models.vit_b_16(weights=models.ViT_B_16_Weights.DEFAULT if pretrained else None)
+        model = models.vit_b_16(
+            weights=models.ViT_B_16_Weights.DEFAULT if pretrained else None
+        )
         in_features = model.heads.head.in_features
         model.heads.head = nn.Linear(in_features, num_classes)
     except Exception:
@@ -26,6 +31,7 @@ def get_vit_model(num_classes, device, pretrained=True):
         in_features = model.heads.head.in_features
         model.heads.head = nn.Linear(in_features, num_classes)
     return model.to(device)
+
 
 def train_one_epoch(model, loader, criterion, optimizer, device):
     model.train()
@@ -51,6 +57,7 @@ def train_one_epoch(model, loader, criterion, optimizer, device):
     acc = correct / total
     return avg_loss, acc
 
+
 def eval_model(model, loader, criterion, device):
     model.eval()
     running_loss = 0.0
@@ -70,10 +77,15 @@ def eval_model(model, loader, criterion, device):
     acc = correct / total if total > 0 else 0.0
     return avg_loss, acc
 
+
 def main():
     parser = argparse.ArgumentParser(description="Train ViT on Raj dataset")
-    parser.add_argument("--annotations", type=str, default=None, help="CSV with image_path,label")
-    parser.add_argument("--root_dir", type=str, default=None, help="root folder with class subfolders")
+    parser.add_argument(
+        "--annotations", type=str, default=None, help="CSV with image_path,label"
+    )
+    parser.add_argument(
+        "--root_dir", type=str, default=None, help="root folder with class subfolders"
+    )
     parser.add_argument("--img_size", type=int, default=224)
     parser.add_argument("--batch_size", type=int, default=32)
     parser.add_argument("--epochs", type=int, default=10)
@@ -86,21 +98,31 @@ def main():
     args = parser.parse_args()
 
     # device
-    device = torch.device(args.device if args.device else ("cuda" if torch.cuda.is_available() else "cpu"))
+    device = torch.device(
+        args.device if args.device else ("cuda" if torch.cuda.is_available() else "cpu")
+    )
     print("Using device:", device)
 
     torch.manual_seed(args.seed)
     np.random.seed(args.seed)
 
     # Dataset
-    ds = RajDataset(root_dir=args.root_dir, annotations_file=args.annotations, img_size=args.img_size)
+    ds = RajDataset(
+        root_dir=args.root_dir,
+        annotations_file=args.annotations,
+        img_size=args.img_size,
+    )
     n = len(ds)
     val_n = int(n * args.val_split)
     train_n = n - val_n
     train_ds, val_ds = random_split(ds, [train_n, val_n])
 
-    train_loader = DataLoader(train_ds, batch_size=args.batch_size, shuffle=True, num_workers=args.num_workers)
-    val_loader = DataLoader(val_ds, batch_size=args.batch_size, shuffle=False, num_workers=args.num_workers)
+    train_loader = DataLoader(
+        train_ds, batch_size=args.batch_size, shuffle=True, num_workers=args.num_workers
+    )
+    val_loader = DataLoader(
+        val_ds, batch_size=args.batch_size, shuffle=False, num_workers=args.num_workers
+    )
 
     num_classes = ds.num_classes()
     print(f"Dataset size: {n}, train: {train_n}, val: {val_n}, classes: {num_classes}")
@@ -118,7 +140,9 @@ def main():
     best_val_acc = 0.0
     for epoch in range(1, args.epochs + 1):
         since = time.time()
-        train_loss, train_acc = train_one_epoch(model, train_loader, criterion, optimizer, device)
+        train_loss, train_acc = train_one_epoch(
+            model, train_loader, criterion, optimizer, device
+        )
         val_loss, val_acc = eval_model(model, val_loader, criterion, device)
         scheduler.step()
 
@@ -132,17 +156,20 @@ def main():
             "epoch": epoch,
             "model_state": model.state_dict(),
             "optimizer_state": optimizer.state_dict(),
-            "val_acc": val_acc
+            "val_acc": val_acc,
         }
         torch.save(ckpt, os.path.join(args.output_dir, f"vit_epoch{epoch}.pth"))
 
         # keep best
         if val_acc > best_val_acc:
             best_val_acc = val_acc
-            torch.save(model.state_dict(), os.path.join(args.output_dir, "vit_best.pth"))
+            torch.save(
+                model.state_dict(), os.path.join(args.output_dir, "vit_best.pth")
+            )
             print("  Saved best model.")
 
     print("Training finished. Best val acc:", best_val_acc)
+
 
 if __name__ == "__main__":
     main()
