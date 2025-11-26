@@ -98,7 +98,9 @@ def main():
         attn_map.unsqueeze(0).unsqueeze(0), size=(224, 224), mode="bilinear"
     )[0, 0]
 
-    show_attention_on_image(img, attn_map)
+    # Resize image to match attention map size
+    img_resized = img.resize((224, 224), Image.BILINEAR)
+    show_attention_on_image(img_resized, attn_map)
 
 
 if __name__ == "__main__":
