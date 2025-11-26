@@ -1,4 +1,10 @@
-# eval_raj_vit.py
+"""
+Loads a pre-trained Vision Transformer (ViT) model for image classification,
+performs inference on a dataset, and outputs predictions and optional evaluation metrics
+to a CSV file.
+uv run eval_raj_vit.py --annotations /path/to/annots.csv --checkpoint models_raj/vit_best.pth --output_csv preds.csv
+"""
+
 import argparse
 import csv
 

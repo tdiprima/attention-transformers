@@ -1,4 +1,9 @@
-# train_raj_vit.py
+"""
+Trains a Vision Transformer (ViT) model on a custom dataset using PyTorch,
+with the option to save the best model based on validation accuracy.
+uv run train_raj_vit.py --annotations /path/to/annots.csv --epochs 8 --batch_size 16 --output_dir models_raj
+"""
+
 import argparse
 import os
 import time

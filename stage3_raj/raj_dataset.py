@@ -1,4 +1,9 @@
-# raj_dataset.py
+"""
+Defines a custom PyTorch Dataset class that loads image data and labels from
+either a CSV file with 'image_path' and 'label' columns or a directory structure
+where images are organized in class-specific folders.
+"""
+
 import os
 
 import pandas as pd
