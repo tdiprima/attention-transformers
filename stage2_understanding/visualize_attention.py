@@ -56,19 +56,37 @@ def main():
     model.eval()
 
     # Grab attention from the last block
-    def get_attn(module, input, output):
-        global attn
-        attn = output
+    attn_weights = []
 
-    last_block = model.encoder.layers[-1].self_attention.attention_probs
-    handle = last_block.register_forward_hook(get_attn)
+    def get_attn(module, input, output):
+        # PyTorch MultiheadAttention returns (attn_output, attn_output_weights) when need_weights=True
+        # But in ViT, we need to hook into the attention mechanism differently
+        # We'll modify the forward pass to capture attention
+        attn_weights.append(output)
+
+    # Hook into the last encoder block's self-attention
+    last_block = model.encoder.layers[-1].self_attention
+
+    # Temporarily modify the forward to return attention weights
+    original_forward = last_block.forward
+
+    def forward_with_attn(x):
+        # Call the original multi-head attention but request attention weights
+        # x shape: [batch, num_tokens, embed_dim]
+        attn_output, attn_output_weights = last_block(x, x, x, need_weights=True, average_attn_weights=False)
+        attn_weights.append(attn_output_weights)
+        return attn_output
+
+    last_block.forward = forward_with_attn
 
     with torch.no_grad():
         _ = model(img_t)
 
-    handle.remove()
+    # Restore original forward
+    last_block.forward = original_forward
 
-    # attn shape: [1, num_heads, num_tokens, num_tokens]
+    # attn shape: [batch, num_heads, num_tokens, num_tokens]
+    attn = attn_weights[0]
     attn_map = attn.mean(1)[0, 0, 1:]  # average heads, take CLS -> patch attention
 
     # Reshape to grid (14x14 for ViT-B/16)
