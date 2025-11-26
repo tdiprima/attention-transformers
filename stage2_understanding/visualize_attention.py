@@ -70,10 +70,12 @@ def main():
     # Temporarily modify the forward to return attention weights
     original_forward = last_block.forward
 
-    def forward_with_attn(x):
+    def forward_with_attn(query, key, value, *args, **kwargs):
         # Call the original multi-head attention but request attention weights
-        # x shape: [batch, num_tokens, embed_dim]
-        attn_output, attn_output_weights = last_block(x, x, x, need_weights=True, average_attn_weights=False)
+        # Override need_weights to True to get attention weights
+        kwargs['need_weights'] = True
+        kwargs['average_attn_weights'] = False
+        attn_output, attn_output_weights = original_forward(query, key, value, *args, **kwargs)
         attn_weights.append(attn_output_weights)
         return attn_output
 
