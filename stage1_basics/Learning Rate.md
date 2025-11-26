@@ -107,4 +107,78 @@ for epoch in range(epochs):
 * If loss **barely changed** → probably too low 🐢
 * Gives you a gentle **console warning** without stopping training ⚡
 
+---
+
+Bet 😎. Here's a **super beginner-friendly way to plot your loss per batch in real time** using `matplotlib`. This lets you **see if your LR is too high or low** while training.
+
+---
+
+### **1️⃣ Add imports**
+
+At the top of your script:
+
+```python
+import matplotlib.pyplot as plt
+from IPython.display import clear_output
+```
+
+> `clear_output()` is just to **update the plot in place** instead of making a million new figures.
+
+---
+
+### **2️⃣ Modify your training loop**
+
+Inside your loop, track losses and plot them:
+
+```python
+batch_losses = []
+
+for epoch in range(epochs):
+    model.train()
+    total_loss = 0
+    loop = tqdm(train_loader, desc=f"Epoch {epoch+1}/{epochs}", ncols=100)
+
+    for i, (images, labels) in enumerate(loop):
+        images, labels = images.to(device), labels.to(device)
+
+        optimizer.zero_grad()
+        outputs = model(images)
+        loss = criterion(outputs, labels)
+        loss.backward()
+        optimizer.step()
+
+        total_loss += loss.item()
+        batch_losses.append(loss.item())
+
+        # Update progress bar
+        loop.set_postfix(loss=loss.item())
+
+        # --- Real-time plot ---
+        if i % 10 == 0:  # update plot every 10 batches
+            clear_output(wait=True)
+            plt.figure(figsize=(8,4))
+            plt.plot(batch_losses, label="Batch Loss")
+            plt.xlabel("Batch")
+            plt.ylabel("Loss")
+            plt.title("Training Loss per Batch")
+            plt.legend()
+            plt.show()
+```
+
+---
+
+### **3️⃣ What this does**
+
+* Plots **loss after every 10 batches** 📊
+* If the curve:
+
+  * **Jumps up** → LR too high 🔥
+  * **Barely drops** → LR too low 🐢
+  * **Smoothly goes down** → perfect ✅
+
+---
+
+💡 **Pro tip:**
+You can combine this with the **epoch-level warnings** I gave earlier for an extra safety net.
+
 <br>
