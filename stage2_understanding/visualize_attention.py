@@ -77,7 +77,7 @@ def main():
         kwargs['average_attn_weights'] = False
         attn_output, attn_output_weights = original_forward(query, key, value, *args, **kwargs)
         attn_weights.append(attn_output_weights)
-        return attn_output
+        return attn_output, attn_output_weights
 
     last_block.forward = forward_with_attn
 
