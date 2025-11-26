@@ -1,9 +1,3 @@
-## 🧠 A Bear-Friendly Learning Path (3 stages, no overwhelm)
-
-Here's a progression that'll get you from 0 → Raj-level transformer wizard.
-
----
-
 ## Stage 1 — Baby Steps: "I need a starter script that actually runs."
 
 Goal: Understand the *shape* of a transformer workflow without caring how it works internally.
