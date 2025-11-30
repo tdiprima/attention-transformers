@@ -2,11 +2,12 @@
 Vision Transformer (ViT) for Image Classification
 Self-contained script with transformer-based classifier
 """
+
+import math
 import os
 import random
 from glob import glob
 from pathlib import Path
-import math
 
 import torch
 import torch.nn as nn
@@ -29,18 +30,22 @@ class ImgDataset(Dataset):
                 self.samples.append((f, classes.index(cls)))
         self.img_size = img_size
         self.augment = augment
-        self.transform_train = T.Compose([
-            T.Resize(img_size),
-            T.RandomHorizontalFlip(),
-            T.RandomRotation(15),
-            T.ToTensor(),
-            T.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
-        ])
-        self.transform_val = T.Compose([
-            T.Resize(img_size),
-            T.ToTensor(),
-            T.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
-        ])
+        self.transform_train = T.Compose(
+            [
+                T.Resize(img_size),
+                T.RandomHorizontalFlip(),
+                T.RandomRotation(15),
+                T.ToTensor(),
+                T.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
+            ]
+        )
+        self.transform_val = T.Compose(
+            [
+                T.Resize(img_size),
+                T.ToTensor(),
+                T.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
+            ]
+        )
 
     def __len__(self):
         return len(self.samples)
@@ -57,6 +62,7 @@ class ImgDataset(Dataset):
 # ============================================================================
 class PatchEmbedding(nn.Module):
     """Split image into patches and embed them"""
+
     def __init__(self, img_size=224, patch_size=16, in_channels=3, embed_dim=768):
         super().__init__()
         self.img_size = img_size
@@ -65,15 +71,14 @@ class PatchEmbedding(nn.Module):
 
         # Convolutional layer to create patch embeddings
         self.projection = nn.Conv2d(
-            in_channels,
-            embed_dim,
-            kernel_size=patch_size,
-            stride=patch_size
+            in_channels, embed_dim, kernel_size=patch_size, stride=patch_size
         )
 
     def forward(self, x):
         # x: (batch_size, channels, height, width)
-        x = self.projection(x)  # (batch_size, embed_dim, n_patches**0.5, n_patches**0.5)
+        x = self.projection(
+            x
+        )  # (batch_size, embed_dim, n_patches**0.5, n_patches**0.5)
         x = x.flatten(2)  # (batch_size, embed_dim, n_patches)
         x = x.transpose(1, 2)  # (batch_size, n_patches, embed_dim)
         return x
@@ -81,12 +86,15 @@ class PatchEmbedding(nn.Module):
 
 class MultiHeadAttention(nn.Module):
     """Multi-head self-attention mechanism"""
+
     def __init__(self, embed_dim=768, num_heads=12, dropout=0.1):
         super().__init__()
         self.embed_dim = embed_dim
         self.num_heads = num_heads
         self.head_dim = embed_dim // num_heads
-        assert self.head_dim * num_heads == embed_dim, "embed_dim must be divisible by num_heads"
+        assert (
+            self.head_dim * num_heads == embed_dim
+        ), "embed_dim must be divisible by num_heads"
 
         self.qkv = nn.Linear(embed_dim, embed_dim * 3)
         self.projection = nn.Linear(embed_dim, embed_dim)
@@ -98,7 +106,9 @@ class MultiHeadAttention(nn.Module):
         # Generate Q, K, V matrices
         qkv = self.qkv(x)  # (batch_size, seq_length, embed_dim * 3)
         qkv = qkv.reshape(batch_size, seq_length, 3, self.num_heads, self.head_dim)
-        qkv = qkv.permute(2, 0, 3, 1, 4)  # (3, batch_size, num_heads, seq_length, head_dim)
+        qkv = qkv.permute(
+            2, 0, 3, 1, 4
+        )  # (3, batch_size, num_heads, seq_length, head_dim)
         q, k, v = qkv[0], qkv[1], qkv[2]
 
         # Compute attention scores
@@ -107,7 +117,9 @@ class MultiHeadAttention(nn.Module):
         attention = self.dropout(attention)
 
         # Apply attention to values
-        out = torch.matmul(attention, v)  # (batch_size, num_heads, seq_length, head_dim)
+        out = torch.matmul(
+            attention, v
+        )  # (batch_size, num_heads, seq_length, head_dim)
         out = out.transpose(1, 2)  # (batch_size, seq_length, num_heads, head_dim)
         out = out.reshape(batch_size, seq_length, embed_dim)
 
@@ -119,6 +131,7 @@ class MultiHeadAttention(nn.Module):
 
 class FeedForward(nn.Module):
     """Position-wise feed-forward network"""
+
     def __init__(self, embed_dim=768, hidden_dim=3072, dropout=0.1):
         super().__init__()
         self.fc1 = nn.Linear(embed_dim, hidden_dim)
@@ -136,6 +149,7 @@ class FeedForward(nn.Module):
 
 class TransformerBlock(nn.Module):
     """Single transformer encoder block"""
+
     def __init__(self, embed_dim=768, num_heads=12, mlp_ratio=4.0, dropout=0.1):
         super().__init__()
         self.norm1 = nn.LayerNorm(embed_dim)
@@ -156,6 +170,7 @@ class TransformerBlock(nn.Module):
 # ============================================================================
 class VisionTransformer(nn.Module):
     """Vision Transformer for image classification"""
+
     def __init__(
         self,
         img_size=224,
@@ -166,7 +181,7 @@ class VisionTransformer(nn.Module):
         depth=12,
         num_heads=12,
         mlp_ratio=4.0,
-        dropout=0.1
+        dropout=0.1,
     ):
         super().__init__()
 
@@ -182,10 +197,12 @@ class VisionTransformer(nn.Module):
         self.pos_dropout = nn.Dropout(dropout)
 
         # Transformer blocks
-        self.blocks = nn.ModuleList([
-            TransformerBlock(embed_dim, num_heads, mlp_ratio, dropout)
-            for _ in range(depth)
-        ])
+        self.blocks = nn.ModuleList(
+            [
+                TransformerBlock(embed_dim, num_heads, mlp_ratio, dropout)
+                for _ in range(depth)
+            ]
+        )
 
         # Classification head
         self.norm = nn.LayerNorm(embed_dim)
@@ -312,7 +329,7 @@ def main():
         depth=DEPTH,
         num_heads=NUM_HEADS,
         mlp_ratio=MLP_RATIO,
-        dropout=DROPOUT
+        dropout=DROPOUT,
     ).to(device)
 
     # Count parameters
@@ -328,7 +345,9 @@ def main():
         print(f"\nEpoch {epoch}/{EPOCHS}")
         tr_loss = train_epoch(model, train_loader, opt, loss_fn, device)
         val_loss, acc = validate(model, val_loader, loss_fn, device)
-        print(f"train_loss: {tr_loss:.4f} | val_loss: {val_loss:.4f} | val_acc: {acc:.4f}")
+        print(
+            f"train_loss: {tr_loss:.4f} | val_loss: {val_loss:.4f} | val_acc: {acc:.4f}"
+        )
 
         if acc > best_acc:
             best_acc = acc
