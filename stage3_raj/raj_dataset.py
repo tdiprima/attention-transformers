@@ -1,12 +1,10 @@
 """
 Defines a custom PyTorch Dataset class that loads image data and labels from
-either a CSV file with 'image_path' and 'label' columns or a directory structure
-where images are organized in class-specific folders.
+a directory structure where images are organized in class-specific folders.
 """
 
 import os
 
-import pandas as pd
 from PIL import Image
 from torch.utils.data import Dataset
 from torchvision import transforms
@@ -14,26 +12,24 @@ from torchvision import transforms
 
 class RajDataset(Dataset):
     """
-    RajDataset supports two modes:
-      1) CSV annotations: annotations_file CSV must have 'image_path' and 'label' columns
-      2) Folder layout: root_dir contains class subfolders (e.g., root/classA/*.png)
+    RajDataset loads images from a folder layout where root_dir contains class
+    subfolders (e.g., root/classA/*.png, root/classB/*.png).
     Returns: (image_tensor, label_index, image_path)
     """
 
     def __init__(
         self,
-        root_dir=None,
-        annotations_file=None,
+        root_dir,
         transform=None,
         img_size=224,
         ensure_exists=True,
     ):
         """
         Args:
-            root_dir (str): root folder with subfolders per class (optional if using CSV)
-            annotations_file (str): path to CSV with columns ['image_path','label'] (can be absolute or relative)
+            root_dir (str): root folder with subfolders per class (required)
             transform (torchvision.transforms): optional transform; if None a default transform is used
             img_size (int): image resizing size (ViT expects 224 usually)
+            ensure_exists (bool): verify that image files exist
         """
         self.img_size = img_size
         self.transform = transform or transforms.Compose(
@@ -50,32 +46,19 @@ class RajDataset(Dataset):
         self.class_to_idx = {}
         self.idx_to_class = {}
 
-        if annotations_file:
-            df = pd.read_csv(annotations_file)
-            if "image_path" not in df.columns or "label" not in df.columns:
-                raise ValueError("CSV must contain 'image_path' and 'label' columns.")
-            for _, row in df.iterrows():
-                imgp = str(row["image_path"])
-                lbl = str(row["label"])
-                self.samples.append((imgp, lbl))
-        elif root_dir:
-            # Walk folder structure
-            classes = sorted(
-                [
-                    d
-                    for d in os.listdir(root_dir)
-                    if os.path.isdir(os.path.join(root_dir, d))
-                ]
-            )
-            for c in classes:
-                cpath = os.path.join(root_dir, c)
-                for fname in os.listdir(cpath):
-                    if fname.lower().endswith(
-                        (".png", ".jpg", ".jpeg", ".tiff", ".bmp")
-                    ):
-                        self.samples.append((os.path.join(cpath, fname), c))
-        else:
-            raise ValueError("Either annotations_file or root_dir must be provided.")
+        # Walk folder structure
+        classes = sorted(
+            [
+                d
+                for d in os.listdir(root_dir)
+                if os.path.isdir(os.path.join(root_dir, d))
+            ]
+        )
+        for c in classes:
+            cpath = os.path.join(root_dir, c)
+            for fname in os.listdir(cpath):
+                if fname.lower().endswith((".png", ".jpg", ".jpeg", ".tiff", ".bmp")):
+                    self.samples.append((os.path.join(cpath, fname), c))
 
         # Build class index
         classes = sorted(list({lbl for _, lbl in self.samples}))
@@ -108,8 +91,11 @@ class RajDataset(Dataset):
 
 if __name__ == "__main__":
     # quick sanity check usage
-    ds = RajDataset(root_dir="../data/small_example", img_size=224, ensure_exists=False)
+    ds = RajDataset(
+        root_dir="/data/erich/raj/data/train", img_size=224, ensure_exists=False
+    )
     print("Found classes:", ds.class_names())
     print("Length:", len(ds))
-    x, y, p = ds[0]
-    print("Sample shape:", x.shape, "label:", y, "path:", p)
+    if len(ds) > 0:
+        x, y, p = ds[0]
+        print("Sample shape:", x.shape, "label:", y, "path:", p)

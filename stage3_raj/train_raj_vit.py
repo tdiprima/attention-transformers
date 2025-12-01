@@ -1,7 +1,8 @@
 """
 Trains a Vision Transformer (ViT) model on a custom dataset using PyTorch,
 with the option to save the best model based on validation accuracy.
-uv run train_raj_vit.py --annotations /path/to/annots.csv --epochs 8 --batch_size 16 --output_dir models_raj
+uv run train_raj_vit.py --epochs 8 --batch_size 16 --output_dir models_raj
+You can override the default paths if needed using the --root_dir argument.
 """
 
 import argparse
@@ -86,10 +87,10 @@ def eval_model(model, loader, criterion, device):
 def main():
     parser = argparse.ArgumentParser(description="Train ViT on Raj dataset")
     parser.add_argument(
-        "--annotations", type=str, default=None, help="CSV with image_path,label"
-    )
-    parser.add_argument(
-        "--root_dir", type=str, default=None, help="root folder with class subfolders"
+        "--root_dir",
+        type=str,
+        default="/data/erich/raj/data/train",
+        help="root folder with class subfolders",
     )
     parser.add_argument("--img_size", type=int, default=224)
     parser.add_argument("--batch_size", type=int, default=32)
@@ -114,7 +115,6 @@ def main():
     # Dataset
     ds = RajDataset(
         root_dir=args.root_dir,
-        annotations_file=args.annotations,
         img_size=args.img_size,
     )
     n = len(ds)

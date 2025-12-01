@@ -2,7 +2,7 @@
 Loads a pre-trained Vision Transformer (ViT) model for image classification,
 performs inference on a dataset, and outputs predictions and optional evaluation metrics
 to a CSV file.
-uv run eval_raj_vit.py --annotations /path/to/annots.csv --checkpoint models_raj/vit_best.pth --output_csv preds.csv
+uv run eval_raj_vit.py --checkpoint models_raj/vit_best.pth --output_csv preds.csv
 """
 
 import argparse
@@ -49,10 +49,10 @@ def load_vit_model(num_classes, device, checkpoint_path):
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument(
-        "--annotations", type=str, default=None, help="CSV with image_path,label"
-    )
-    parser.add_argument(
-        "--root_dir", type=str, default=None, help="root folder with class subfolders"
+        "--root_dir",
+        type=str,
+        default="/data/erich/raj/data/test",
+        help="root folder with class subfolders",
     )
     parser.add_argument(
         "--checkpoint",
@@ -74,7 +74,6 @@ def main():
 
     ds = RajDataset(
         root_dir=args.root_dir,
-        annotations_file=args.annotations,
         img_size=args.img_size,
     )
     loader = DataLoader(
