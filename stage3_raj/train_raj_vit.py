@@ -19,6 +19,7 @@ import numpy as np
 import torch
 import torch.nn as nn
 import torch.optim as optim
+from rich_argparse import RichHelpFormatter
 from torch.utils.data import DataLoader, random_split
 from torchvision import models
 from tqdm import tqdm
@@ -92,7 +93,7 @@ def eval_model(model, loader, criterion, device):
 
 def main():
     home = os.path.expanduser('~')
-    parser = argparse.ArgumentParser(description="Train ViT on Raj dataset")
+    parser = argparse.ArgumentParser(description="Train ViT on Raj dataset", formatter_class=RichHelpFormatter)
     parser.add_argument(
         "--root_dir",
         type=str,

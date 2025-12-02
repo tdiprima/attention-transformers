@@ -14,6 +14,7 @@ import argparse
 
 import torch
 import torch.nn as nn
+from rich_argparse import RichHelpFormatter
 from torchvision import models
 
 
@@ -100,7 +101,7 @@ def verify_torchscript_model(scripted_model, original_model, device, img_size=22
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Convert ViT model to TorchScript")
+    parser = argparse.ArgumentParser(description="Convert ViT model to TorchScript", formatter_class=RichHelpFormatter)
     parser.add_argument(
         "--checkpoint",
         type=str,

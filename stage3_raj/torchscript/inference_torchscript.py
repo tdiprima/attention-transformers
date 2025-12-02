@@ -12,6 +12,7 @@ import argparse
 
 import torch
 from PIL import Image
+from rich_argparse import RichHelpFormatter
 from torchvision import transforms
 
 
@@ -70,7 +71,7 @@ def predict(model, image_tensor, device, class_names=None):
 
 
 def main():
-    parser = argparse.ArgumentParser(description="TorchScript model inference")
+    parser = argparse.ArgumentParser(description="TorchScript model inference", formatter_class=RichHelpFormatter)
     parser.add_argument(
         "--model",
         type=str,

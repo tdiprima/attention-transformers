@@ -9,6 +9,7 @@ dependencies = [
     "numpy>=1.24,<2.0",
     "pandas>=2.3.3",
     "pillow>=11.3.0",
+    "rich-argparse>=1.7.2",
     "scikit-learn>=1.6.1",
     "torch>=2.2.0,<2.3",
     "torchvision>=0.17.0,<0.18",
