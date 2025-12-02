@@ -21,7 +21,7 @@ def patchify(img, patch_size=16):
     """
     c, h, w = img.shape
     assert (
-        h % patch_size == 0 and w % patch_size == 0
+        h % patch_size == w % patch_size == 0
     ), "Image must be divisible by patch_size."
 
     patches = img.unfold(1, patch_size, patch_size).unfold(2, patch_size, patch_size)

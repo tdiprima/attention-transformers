@@ -1,4 +1,4 @@
-# Trains a Vision Transformer model on the CIFAR-10 dataset and evaluates its test accuracy, 
+# Trains a Vision Transformer model on the CIFAR-10 dataset and evaluates its test accuracy,
 # saving the trained model's state.
 from pathlib import Path
 
@@ -24,8 +24,12 @@ def main():
     )
 
     # Load CIFAR-10
-    train_set = datasets.CIFAR10(root="./data", train=True, download=True, transform=transform)
-    test_set = datasets.CIFAR10(root="./data", train=False, download=True, transform=transform)
+    train_set = datasets.CIFAR10(
+        root="./data", train=True, download=True, transform=transform
+    )
+    test_set = datasets.CIFAR10(
+        root="./data", train=False, download=True, transform=transform
+    )
 
     train_loader = DataLoader(train_set, batch_size=32, shuffle=True)
     test_loader = DataLoader(test_set, batch_size=32, shuffle=False)
@@ -59,7 +63,9 @@ def main():
             total_loss += loss.item()
             loop.set_postfix(loss=loss.item())
 
-        print(f"Epoch {epoch+1} finished. Avg Loss: {total_loss / len(train_loader):.4f}")
+        print(
+            f"Epoch {epoch+1} finished. Avg Loss: {total_loss / len(train_loader):.4f}"
+        )
 
     # Evaluation
     model.eval()

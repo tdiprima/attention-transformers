@@ -13,16 +13,16 @@ You can override the default paths if needed using the --root_dir argument.
 import argparse
 import os
 import time
+from pathlib import Path
 
 import numpy as np
 import torch
 import torch.nn as nn
 import torch.optim as optim
+from raj_dataset import RajDataset
 from torch.utils.data import DataLoader, random_split
 from torchvision import models
 from tqdm import tqdm
-
-from raj_dataset import RajDataset
 
 
 def get_vit_model(num_classes, device, pretrained=True):
@@ -116,7 +116,7 @@ def main():
 
     # device
     device = torch.device(
-        args.device if args.device else ("cuda" if torch.cuda.is_available() else "cpu")
+        args.device or ("cuda" if torch.cuda.is_available() else "cpu")
     )
     print("Using device:", device)
 
@@ -157,7 +157,7 @@ def main():
     optimizer = optim.Adam(model.parameters(), lr=args.lr)
     scheduler = optim.lr_scheduler.StepLR(optimizer, step_size=5, gamma=0.5)
 
-    os.makedirs(args.output_dir, exist_ok=True)
+    Path(args.output_dir).mkdir(parents=True, exist_ok=True)
 
     best_val_acc = 0.0
     for epoch in range(1, args.epochs + 1):

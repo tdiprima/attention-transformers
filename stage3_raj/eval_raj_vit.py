@@ -1,7 +1,7 @@
 """
 Loads a pre-trained Vision Transformer (ViT) model for image classification,
-performs inference on a dataset, and outputs predictions and optional evaluation metrics
-to a CSV file.
+performs inference on a dataset, and outputs predictions and optional evaluation
+metrics (e.g., accuracy, confusion matrix, ROC curve) to a CSV file.
 uv run eval_raj_vit.py --checkpoint models_raj/vit_best.pth --output_csv preds.csv
 """
 
@@ -12,18 +12,12 @@ import matplotlib.pyplot as plt
 import numpy as np
 import seaborn as sns
 import torch
+from raj_dataset import RajDataset
+from sklearn.metrics import (auc, classification_report, confusion_matrix,
+                             roc_curve)
 from torch.utils.data import DataLoader
 from torchvision import models
 from tqdm import tqdm
-
-from raj_dataset import RajDataset
-from sklearn.metrics import (
-    auc,
-    classification_report,
-    confusion_matrix,
-    roc_auc_score,
-    roc_curve,
-)
 
 
 def load_vit_model(num_classes, device, checkpoint_path):
@@ -68,7 +62,7 @@ def main():
     args = parser.parse_args()
 
     device = torch.device(
-        args.device if args.device else ("cuda" if torch.cuda.is_available() else "cpu")
+        args.device or ("cuda" if torch.cuda.is_available() else "cpu")
     )
     print("Using device:", device)
 
@@ -156,9 +150,9 @@ def main():
 
     # Calculate ROC curves and AUC scores for each class
     num_classes = ds.num_classes()
-    fpr = dict()
-    tpr = dict()
-    roc_auc = dict()
+    fpr = {}
+    tpr = {}
+    roc_auc = {}
 
     for i in range(num_classes):
         fpr[i], tpr[i], _ = roc_curve(all_labels == i, all_probs[:, i])

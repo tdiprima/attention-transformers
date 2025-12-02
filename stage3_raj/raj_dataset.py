@@ -4,6 +4,7 @@ a directory structure where images are organized in class-specific folders.
 """
 
 import os
+from pathlib import Path
 
 from PIL import Image
 from torch.utils.data import Dataset
@@ -66,7 +67,7 @@ class RajDataset(Dataset):
         self.idx_to_class = {i: c for c, i in self.class_to_idx.items()}
 
         if ensure_exists:
-            missing = [p for p, _ in self.samples if not os.path.exists(p)]
+            missing = [p for p, _ in self.samples if not Path(p).exists()]
             if missing:
                 raise FileNotFoundError(
                     f"Found {len(missing)} missing images. Example: {missing[:3]}"
